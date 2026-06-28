@@ -7,7 +7,7 @@ cask "lune" do
   desc "AI-powered terminal with local Ollama suggestions and chat"
   homepage "https://github.com/codiku-dev/lune-terminal"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Lune.app"
 
