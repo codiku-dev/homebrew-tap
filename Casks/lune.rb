@@ -1,6 +1,6 @@
 cask "lune" do
-  version "1.0.6"
-  sha256 "ced8948060485353ea21f629840e5bda19584fe48b81e58d8fd41166f4decd76"
+  version "1.0.7"
+  sha256 "036f620e51a98baa7d6bcc54b4d65658efa9d80ea02fe14c4838313c6ee033e4"
 
   url "https://github.com/codiku-dev/lune-releases/releases/download/v#{version}/Lune-#{version}.dmg"
   name "Lune"
@@ -9,19 +9,28 @@ cask "lune" do
 
   depends_on macos: :sonoma
 
-  app "Lune.app"
-
-  # The app is ad-hoc signed (not notarized), so Gatekeeper flags the
-  # Homebrew-quarantined copy as "damaged". Strip the quarantine flag on install
-  # so `brew install --cask lune` just works, like the DMG's first-run opener.
+  # Install manually instead of `app` so upgrades succeed when the user removed
+  # /Applications/Lune.app (Homebrew's default app uninstall fails if missing).
   postflight do
+    destination = Pathname("#{appdir}/Lune.app")
+    source = staged_path.join("Lune.app")
+
+    system_command "/bin/rm", args: ["-rf", destination] if destination.exist?
+
+    system_command "/usr/bin/ditto",
+                   args: ["--rsrc", "--force", source.to_s, destination.to_s]
+
+    # Ad-hoc signed (not notarized): strip quarantine so Gatekeeper does not
+    # report the Homebrew copy as "damaged".
     system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Lune.app"]
+                   args: ["-dr", "com.apple.quarantine", destination.to_s]
   end
 
+  uninstall delete: "#{appdir}/Lune.app"
+
   zap trash: [
+    "~/.config/lune",
     "~/Library/Preferences/com.lune.terminal.plist",
     "~/Library/Saved Application State/com.lune.terminal.savedState",
-    "~/.config/lune",
   ]
 end
