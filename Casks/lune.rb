@@ -11,14 +11,17 @@ cask "lune" do
 
   # Install manually instead of `app` so upgrades succeed when the user removed
   # /Applications/Lune.app (Homebrew's default app uninstall fails if missing).
+  preflight do
+    destination = Pathname("#{appdir}/Lune.app")
+    system_command "/bin/rm", args: ["-rf", destination] if destination.exist?
+  end
+
   postflight do
     destination = Pathname("#{appdir}/Lune.app")
     source = staged_path.join("Lune.app")
 
-    system_command "/bin/rm", args: ["-rf", destination] if destination.exist?
-
     system_command "/usr/bin/ditto",
-                   args: ["--rsrc", "--force", source.to_s, destination.to_s]
+                   args: ["--rsrc", source.to_s, destination.to_s]
 
     # Ad-hoc signed (not notarized): strip quarantine so Gatekeeper does not
     # report the Homebrew copy as "damaged".
@@ -26,7 +29,10 @@ cask "lune" do
                    args: ["-dr", "com.apple.quarantine", destination.to_s]
   end
 
-  uninstall delete: "#{appdir}/Lune.app"
+  uninstall_preflight do
+    destination = Pathname("#{appdir}/Lune.app")
+    system_command "/bin/rm", args: ["-rf", destination] if destination.exist?
+  end
 
   zap trash: [
     "~/.config/lune",
