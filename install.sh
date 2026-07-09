@@ -1,15 +1,12 @@
 #!/bin/bash
-# End-user installer for Lune (no Homebrew required).
+# Install Lune: Homebrew when available, otherwise curl the release .dmg.
 #
 #   curl -fsSL https://raw.githubusercontent.com/codiku-dev/homebrew-tap/main/install.sh | bash
-#
-# A script piped into bash is NOT quarantined, so it can strip the
-# com.apple.quarantine flag from the app after install. That avoids the
-# "Lune is damaged" Gatekeeper block without any paid Apple Developer account.
 set -euo pipefail
 
 RELEASE_REPO="codiku-dev/lune-releases"
-DMG_URL="${LUNE_DMG_URL:-https://github.com/${RELEASE_REPO}/releases/latest/download/Lune.dmg}"
+TAP="codiku-dev/tap"
+CASK="lune"
 APP_NAME="Lune.app"
 DEST="/Applications/${APP_NAME}"
 MIN_MACOS=14
@@ -25,11 +22,37 @@ if (( macos_major < MIN_MACOS )); then
   exit 1
 fi
 
+BREW="$(command -v brew || true)"
+if [[ -n "${BREW}" ]]; then
+  echo "→ Installing via Homebrew…"
+  "${BREW}" tap "${TAP}" 2>/dev/null || true
+  if "${BREW}" list --cask "${CASK}" >/dev/null 2>&1; then
+    "${BREW}" upgrade --cask "${CASK}"
+  else
+    "${BREW}" install --cask "${CASK}"
+  fi
+  echo "✓ Lune installed. Launching…"
+  /usr/bin/open -a Lune
+  exit 0
+fi
+
 if ! /usr/bin/curl --version >/dev/null 2>&1; then
-  echo "✗ curl is required but was not found." >&2
+  echo "✗ curl is required (or install Homebrew from https://brew.sh)." >&2
   exit 1
 fi
 
+echo "→ Homebrew not found — downloading the latest release…"
+TAG="$(
+  /usr/bin/curl -fsSL "https://api.github.com/repos/${RELEASE_REPO}/releases/latest" \
+    | /usr/bin/sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\([^"]*\)".*/\1/p' \
+    | /usr/bin/head -n 1
+)"
+if [[ -z "${TAG}" ]]; then
+  echo "✗ Could not resolve the latest Lune version." >&2
+  exit 1
+fi
+
+DMG_URL="https://github.com/${RELEASE_REPO}/releases/download/v${TAG}/Lune-${TAG}.dmg"
 TMP="$(/usr/bin/mktemp -d)"
 DMG="${TMP}/Lune.dmg"
 MOUNT=""
@@ -40,7 +63,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "→ Downloading Lune…"
+echo "→ Downloading Lune ${TAG}…"
 /usr/bin/curl -fSL --progress-bar "${DMG_URL}" -o "${DMG}"
 
 echo "→ Mounting…"
