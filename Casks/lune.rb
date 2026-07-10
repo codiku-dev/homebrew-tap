@@ -1,6 +1,6 @@
 cask "lune" do
-  version "1.0.17"
-  sha256 "b27ca55416b1513da56c1967fa790bc16bb593bdd4343dc418ee48a23151f9e5"
+  version "1.0.18"
+  sha256 "c817be3ebacb84c6d21f61aa88249412559186d2269c9be7478b58c7e869fdf6"
 
   url "https://github.com/codiku-dev/lune-releases/releases/download/v#{version}/Lune-#{version}.dmg"
   name "Lune"
