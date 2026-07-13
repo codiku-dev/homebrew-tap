@@ -1,7 +1,8 @@
 #!/bin/bash
 # Install Lune: Homebrew when available, otherwise curl the release .dmg.
 #
-#   curl -fsSL https://raw.githubusercontent.com/codiku-dev/homebrew-tap/main/install.sh | bash
+#   bash -c "$(curl -fsSL -H 'Accept: application/vnd.github.raw+json' \
+#     https://api.github.com/repos/codiku-dev/homebrew-tap/contents/install.sh?ref=main)"
 set -euo pipefail
 
 RELEASE_REPO="codiku-dev/lune-releases"
